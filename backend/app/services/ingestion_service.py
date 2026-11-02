@@ -181,6 +181,31 @@ class IngestionService:
 
         return documents
 
+    def delete_document(self, source: str, delete_physical_file: bool = False) -> Dict[str, Any]:
+        """Delete all chunks for a document from vector store, and optionally delete file on disk."""
+        chunks_deleted = self.vector_store.delete_document(source)
+        file_deleted = False
+
+        if delete_physical_file:
+            try:
+                candidate_path = Path(source)
+                if not candidate_path.is_file():
+                    candidate_path = self.docs_dir / Path(source).name
+                if candidate_path.is_file():
+                    candidate_path.unlink()
+                    file_deleted = True
+                    logger.info(f"Deleted physical document file from disk: {candidate_path}")
+            except Exception as e:
+                logger.warning(f"Could not delete physical file for '{source}': {e}")
+
+        return {
+            "source": source,
+            "filename": Path(source).name,
+            "chunks_deleted": chunks_deleted,
+            "file_deleted": file_deleted,
+        }
+
+
 
 _ingestion_service_instance: Optional[IngestionService] = None
 

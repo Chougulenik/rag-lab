@@ -1,9 +1,10 @@
 import React from 'react';
 import Modal from '../common/Modal';
 import Badge from '../common/Badge';
-import { Layers, FileText } from 'lucide-react';
+import Button from '../common/Button';
+import { Layers, FileText, Trash2 } from 'lucide-react';
 
-export default function ChunkViewerModal({ isOpen, onClose, document }) {
+export default function ChunkViewerModal({ isOpen, onClose, document, onDelete }) {
   if (!document) return null;
 
   const fileName = document.source ? document.source.split(/[/\\]/).pop() : 'Document';
@@ -34,10 +35,27 @@ export default function ChunkViewerModal({ isOpen, onClose, document }) {
             </span>
           </div>
 
-          <Badge variant="accent">
-            <Layers size={13} />
-            {document.chunk_count ?? document.chunks?.length ?? 1} Chunks
-          </Badge>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <Badge variant="accent">
+              <Layers size={13} />
+              {document.chunk_count ?? document.chunks?.length ?? 1} Chunks
+            </Badge>
+
+            {onDelete && (
+              <Button
+                variant="danger"
+                size="sm"
+                icon={Trash2}
+                onClick={() => {
+                  onClose();
+                  onDelete(document);
+                }}
+                title="Delete document and chunks"
+              >
+                Delete
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Chunks List */}

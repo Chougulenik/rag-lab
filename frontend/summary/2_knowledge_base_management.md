@@ -40,12 +40,20 @@ This feature provides a self-service management portal where documents can be in
 - Added a **"Re-index Docs Directory"** action that triggers a server-side scan of the local `docs/` folder.
 - Synchronizes the vector store whenever source files are added or updated on disk.
 
+### E. Document Deletion & Vector Pruning
+- Added a dedicated **Delete** button next to each document in the catalog table and inside the chunk inspection modal.
+- Includes a safety confirmation dialog showing total chunk count and total character volume to be deleted.
+- Provides an optional checkbox allowing users to also remove the underlying physical file from the `docs/` folder.
+- Backend API `DELETE /api/v1/documents?source=...` automatically deletes all associated chunks from ChromaDB and recalculates live knowledge base statistics.
+
 ---
 
 ## 💡 3. Why We Are Using This Approach ("Why We Chose This")
 
 | What We Used | Why We Used It (Technical & Business Rationale) | What Would Happen If We Didn't |
 |---|---|---|
+| **Document Deletion & Vector Pruning** | Knowledge bases become polluted with obsolete, superseded, or erroneous documents over time. Deleting irrelevant chunks prevents obsolete data from polluting LLM answers. | Outdated or deprecated chunks remain in ChromaDB and continue to be retrieved, leading to stale or incorrect answers. |
+| **Delete Confirmation Modal** | Prevents accidental data loss by displaying exact chunk counts and filename before committing the deletion. | A single misclick would permanently delete vectors that took API quotas and time to embed. |
 | **Multiple Chunking Algorithms** | Different documents require different splitting logic: code and legal contracts need semantic boundaries, while manuals work well with overlapping recursive character splits. Giving users a choice prevents broken context. | Using a single naive splitter produces truncated sentences and poor vector recall across complex documents. |
 | **Configurable Chunk Overlap** | Sliding window overlap (e.g., 100 characters) ensures that context spanning chunk boundaries is not lost between adjacent embeddings. | If a critical fact spans the boundary between Chunk A and Chunk B, neither chunk has enough meaning to match the query. |
 | **Granular Chunk Inspector Modal** | Allows developers and admins to verify chunk boundaries directly from the browser without running manual python scripts or opening sqlite databases. | Debugging poor search results requires digging into raw database tables or running console scripts. |

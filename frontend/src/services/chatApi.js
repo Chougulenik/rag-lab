@@ -1,15 +1,43 @@
 import apiClient from './apiClient';
 
+export function extractText(content) {
+  if (content === null || content === undefined) return '';
+  if (typeof content === 'string') return content;
+  if (Array.isArray(content)) {
+    return content
+      .map((item) => {
+        if (!item) return '';
+        if (typeof item === 'string') return item;
+        if (typeof item === 'object') {
+          if (typeof item.text === 'string') return item.text;
+          if (typeof item.content === 'string') return item.content;
+        }
+        return '';
+      })
+      .join('');
+  }
+  if (typeof content === 'object') {
+    if (typeof content.text === 'string') return content.text;
+    if (typeof content.content === 'string') return content.content;
+  }
+  return String(content);
+}
+
 export const chatApi = {
   // Non-streaming completion
-  sendMessage: ({ message, history = [], strategy = 'vector', k = 4, temperature = 0.2 }) =>
-    apiClient.post('/chat/completions', {
+  sendMessage: async ({ message, history = [], strategy = 'vector', k = 4, temperature = 0.2 }) => {
+    const res = await apiClient.post('/chat/completions', {
       message,
       history,
       strategy,
       k,
       temperature,
-    }),
+    });
+    if (res.data && res.data.answer) {
+      res.data.answer = extractText(res.data.answer);
+    }
+    return res;
+  },
 
   // Streaming completion using Fetch ReadableStream
   streamMessage: async ({
@@ -66,9 +94,12 @@ export const chatApi = {
           try {
             const data = JSON.parse(jsonStr);
             if (data.type === 'token' && onToken) {
-              onToken(data.content);
+              const text = extractText(data.content !== undefined ? data.content : (data.text || data.token));
+              if (text) {
+                onToken(text);
+              }
             } else if (data.type === 'citations' && onCitations) {
-              onCitations(data.citations);
+              onCitations(data.citations || []);
             } else if (data.type === 'error' && onError) {
               onError(data.error);
             }

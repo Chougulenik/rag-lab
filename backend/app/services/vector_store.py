@@ -321,6 +321,37 @@ class VectorStoreManager:
             logger.error(f"Failed to retrieve catalog from ChromaDB: {e}")
             return []
 
+    def delete_document(self, source: str) -> int:
+        """Delete all chunks for a given source from ChromaDB."""
+        try:
+            collection = self.db._collection
+            raw = collection.get(include=["metadatas"])
+            ids_to_delete = []
+            normalized_source = source.replace("\\", "/").strip().lower()
+            target_filename = Path(source).name.lower()
+
+            for chunk_id, meta in zip(raw.get("ids", []), raw.get("metadatas", [])):
+                if meta and isinstance(meta, dict):
+                    chunk_source = str(meta.get("source", "")).replace("\\", "/").strip().lower()
+                    chunk_filename = Path(chunk_source).name.lower()
+                    if (
+                        chunk_source == normalized_source
+                        or chunk_filename == target_filename
+                        or target_filename in chunk_source
+                    ):
+                        ids_to_delete.append(chunk_id)
+
+            if ids_to_delete:
+                collection.delete(ids=ids_to_delete)
+                logger.info(f"Deleted {len(ids_to_delete)} chunks from ChromaDB for source '{source}'")
+                return len(ids_to_delete)
+            else:
+                logger.warning(f"No chunks found in ChromaDB matching source '{source}'")
+                return 0
+        except Exception as e:
+            logger.error(f"Failed to delete chunks for '{source}' from ChromaDB: {e}")
+            raise VectorStoreException(f"Failed to delete document from vector database: {e}")
+
     def reset_collection(self) -> None:
         """Reset or clear all entries in the Chroma collection."""
         try:

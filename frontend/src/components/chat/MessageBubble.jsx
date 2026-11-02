@@ -84,7 +84,7 @@ export default function MessageBubble({ message, onCitationClick }) {
           </div>
         </div>
 
-        {/* Content with whitespace formatting and streaming cursor */}
+        {/* Content with whitespace formatting and streaming state */}
         <div
           style={{
             fontSize: '0.95rem',
@@ -94,19 +94,76 @@ export default function MessageBubble({ message, onCitationClick }) {
             wordBreak: 'break-word',
           }}
         >
-          {message.content}
-          {message.isStreaming && (
-            <span
+          {message.isStreaming && !message.content ? (
+            <div
               style={{
-                display: 'inline-block',
-                width: '8px',
-                height: '16px',
-                marginLeft: '4px',
-                backgroundColor: 'var(--accent-secondary)',
-                animation: 'pulse 0.8s infinite',
-                verticalAlign: 'middle',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.6rem',
+                color: 'var(--text-secondary)',
+                fontSize: '0.875rem',
+                padding: '0.2rem 0',
               }}
-            />
+            >
+              <span
+                style={{
+                  display: 'inline-flex',
+                  gap: '4px',
+                  alignItems: 'center',
+                }}
+              >
+                <span
+                  style={{
+                    width: '6px',
+                    height: '6px',
+                    borderRadius: '50%',
+                    backgroundColor: 'var(--accent-secondary)',
+                    animation: 'dotPulse 1.2s infinite ease-in-out',
+                    animationDelay: '0s',
+                  }}
+                />
+                <span
+                  style={{
+                    width: '6px',
+                    height: '6px',
+                    borderRadius: '50%',
+                    backgroundColor: 'var(--accent-secondary)',
+                    animation: 'dotPulse 1.2s infinite ease-in-out',
+                    animationDelay: '0.2s',
+                  }}
+                />
+                <span
+                  style={{
+                    width: '6px',
+                    height: '6px',
+                    borderRadius: '50%',
+                    backgroundColor: 'var(--accent-secondary)',
+                    animation: 'dotPulse 1.2s infinite ease-in-out',
+                    animationDelay: '0.4s',
+                  }}
+                />
+              </span>
+              <span style={{ fontStyle: 'italic', letterSpacing: '0.01em' }}>
+                Analyzing citations & synthesizing response...
+              </span>
+            </div>
+          ) : (
+            <>
+              {message.content}
+              {message.isStreaming && (
+                <span
+                  style={{
+                    display: 'inline-block',
+                    width: '8px',
+                    height: '16px',
+                    marginLeft: '4px',
+                    backgroundColor: 'var(--accent-secondary)',
+                    animation: 'cursorBlink 0.8s infinite',
+                    verticalAlign: 'middle',
+                  }}
+                />
+              )}
+            </>
           )}
         </div>
 

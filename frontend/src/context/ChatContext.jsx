@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
-import { chatApi } from '../services/chatApi';
+import { chatApi, extractText } from '../services/chatApi';
 
 const ChatContext = createContext(null);
 
@@ -52,7 +52,10 @@ export function ChatProvider({ children }) {
         temperature,
         signal: abortControllerRef.current.signal,
         onToken: (token) => {
-          accumulatedContent += token;
+          const strToken = typeof token === 'string' ? token : extractText(token);
+          if (!strToken) return;
+
+          accumulatedContent += strToken;
           setMessages((prev) => {
             const copy = [...prev];
             const last = copy[copy.length - 1];

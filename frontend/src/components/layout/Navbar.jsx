@@ -1,15 +1,12 @@
 import React from 'react';
-import { MessageSquare, Database, Search, Cpu, CheckCircle2, AlertTriangle } from 'lucide-react';
-import Badge from '../common/Badge';
+import { MessageSquare, Database, Search, Cpu } from 'lucide-react';
 
-export default function Navbar({ activeTab, onTabChange, systemStats }) {
+export default function Navbar({ activeTab, onTabChange }) {
   const tabs = [
     { id: 'chat', label: 'Conversational RAG', icon: MessageSquare },
     { id: 'documents', label: 'Knowledge Base', icon: Database },
     { id: 'playground', label: 'Retrieval Playground', icon: Search },
   ];
-
-  const isConnected = systemStats?.status === 'healthy' || systemStats?.status === 'online';
 
   return (
     <header
@@ -28,7 +25,7 @@ export default function Navbar({ activeTab, onTabChange, systemStats }) {
       }}
     >
       {/* Brand logo & title */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
         <div
           style={{
             width: '38px',
@@ -60,7 +57,7 @@ export default function Navbar({ activeTab, onTabChange, systemStats }) {
               Enterprise
             </span>
           </div>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+          <span style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'block', lineHeight: '1.2' }}>
             Advanced Multi-Strategy Retrieval Platform
           </span>
         </div>
@@ -108,33 +105,8 @@ export default function Navbar({ activeTab, onTabChange, systemStats }) {
         })}
       </nav>
 
-      {/* Right Stats & Status Badge */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-        {systemStats ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Badge variant={isConnected ? 'success' : 'warning'}>
-              {isConnected ? <CheckCircle2 size={12} /> : <AlertTriangle size={12} />}
-              {isConnected ? 'ChromaDB Active' : 'Connecting'}
-            </Badge>
-            <span
-              style={{
-                fontSize: '0.8rem',
-                color: 'var(--text-muted)',
-                background: 'var(--bg-tertiary)',
-                padding: '0.2rem 0.6rem',
-                borderRadius: 'var(--radius-full)',
-                border: '1px solid var(--border-subtle)',
-              }}
-            >
-              {systemStats.chunk_count ?? 0} Chunks ({systemStats.document_count ?? 0} Docs)
-            </span>
-          </div>
-        ) : (
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-            System Initializing...
-          </span>
-        )}
-      </div>
+      {/* Right spacer to keep center tabs balanced */}
+      <div style={{ flex: 1 }} />
     </header>
   );
 }

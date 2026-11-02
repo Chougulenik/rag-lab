@@ -22,4 +22,10 @@ export const documentApi = {
       chunk_size: chunkSize,
       chunk_overlap: chunkOverlap,
     }),
+
+  // Delete all chunks for a document from the vector store
+  deleteDocument: (source, deleteFile = false) =>
+    apiClient.delete('/documents', {
+      params: { source, delete_file: deleteFile },
+    }),
 };

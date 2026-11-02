@@ -64,6 +64,22 @@ export function DocumentProvider({ children }) {
     [fetchDocuments, fetchStats]
   );
 
+  const deleteDocument = useCallback(
+    async (source, deleteFile = false) => {
+      setError(null);
+      try {
+        const res = await documentApi.deleteDocument(source, deleteFile);
+        await fetchDocuments();
+        await fetchStats();
+        return res;
+      } catch (err) {
+        setError(err.message || 'Failed to delete document');
+        throw err;
+      }
+    },
+    [fetchDocuments, fetchStats]
+  );
+
   // Initial fetch on mount
   useEffect(() => {
     fetchStats();
@@ -82,6 +98,7 @@ export function DocumentProvider({ children }) {
         fetchStats,
         uploadDocument,
         reindexDocuments,
+        deleteDocument,
       }}
     >
       {children}

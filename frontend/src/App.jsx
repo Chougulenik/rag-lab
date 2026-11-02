@@ -8,7 +8,17 @@ import StrategyComparison from './components/playground/StrategyComparison';
 
 function MainApp() {
   const [activeTab, setActiveTab] = useState('chat');
-  const { documents, systemStats, loading, reindexing, error, fetchDocuments, uploadDocument, reindexDocuments } = useDocuments();
+  const {
+    documents,
+    systemStats,
+    loading,
+    reindexing,
+    error,
+    fetchDocuments,
+    uploadDocument,
+    reindexDocuments,
+    deleteDocument,
+  } = useDocuments();
   const {
     messages,
     sendMessage,
@@ -47,6 +57,7 @@ function MainApp() {
           onRefresh={fetchDocuments}
           onUpload={uploadDocument}
           onReindex={reindexDocuments}
+          onDelete={deleteDocument}
           reindexing={reindexing}
         />
       )}

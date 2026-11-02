@@ -1,11 +1,12 @@
 import os
 from pathlib import Path
-from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException
+from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException, Query
 from ....schemas.document import (
     DocumentListResponse,
     ReindexRequest,
     IndexingJobResponse,
     UploadResponse,
+    DeleteDocumentResponse,
 )
 from ....services.ingestion_service import IngestionService, get_ingestion_service
 from ....core.config import settings
@@ -92,3 +93,28 @@ async def reindex_documents(
     except Exception as e:
         logger.error(f"Re-indexing failed: {e}")
         raise HTTPException(status_code=500, detail=f"Reindexing failed: {str(e)}")
+
+
+@router.delete("", response_model=DeleteDocumentResponse)
+async def delete_document(
+    source: str = Query(..., description="Source path or filename of document to delete"),
+    delete_file: bool = Query(False, description="Optionally delete physical file from disk"),
+    ingestion: IngestionService = Depends(get_ingestion_service),
+):
+    """Delete all chunks for a document from the ChromaDB vector store."""
+    if not source.strip():
+        raise HTTPException(status_code=400, detail="Document source cannot be empty")
+
+    try:
+        res = ingestion.delete_document(source=source, delete_physical_file=delete_file)
+        return DeleteDocumentResponse(
+            success=True,
+            message=f"Successfully removed {res['chunks_deleted']} chunks for '{res['filename']}'.",
+            source=res["source"],
+            filename=res["filename"],
+            chunks_deleted=res["chunks_deleted"],
+        )
+    except Exception as e:
+        logger.error(f"Delete failed for source '{source}': {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete document: {str(e)}")
+

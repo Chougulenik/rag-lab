@@ -48,3 +48,13 @@ class UploadResponse(BaseModel):
     filename: str
     chunk_count: int
     characters: int
+
+
+class DeleteDocumentResponse(BaseModel):
+    """Response returned after deleting a document."""
+    success: bool = True
+    message: str = Field(description="Outcome status message")
+    source: str = Field(description="Source identifier that was deleted")
+    filename: str = Field(description="File name that was deleted")
+    chunks_deleted: int = Field(default=0, description="Number of chunks deleted")
+

@@ -83,3 +83,24 @@ body::after {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
+
+/* Streaming and Loading Animations */
+@keyframes cursorBlink {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes dotPulse {
+  0%, 100% {
+    transform: scale(0.8);
+    opacity: 0.35;
+  }
+  50% {
+    transform: scale(1.3);
+    opacity: 1;
+  }
+}

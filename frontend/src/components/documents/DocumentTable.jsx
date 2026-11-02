@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { FileText, Upload, RefreshCw, Eye, Search, Layers, Database } from 'lucide-react';
+import { FileText, Upload, RefreshCw, Eye, Search, Layers, Database, Trash2, AlertTriangle } from 'lucide-react';
 import Button from '../common/Button';
 import Badge from '../common/Badge';
+import Modal from '../common/Modal';
 import DocumentUploadModal from './DocumentUploadModal';
 import ChunkViewerModal from './ChunkViewerModal';
 
@@ -12,11 +13,28 @@ export default function DocumentTable({
   onRefresh,
   onUpload,
   onReindex,
+  onDelete,
   reindexing = false,
 }) {
   const [search, setSearch] = useState('');
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState(null);
+  const [docToDelete, setDocToDelete] = useState(null);
+  const [deletePhysicalFile, setDeletePhysicalFile] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleConfirmDelete = async () => {
+    if (!docToDelete || !onDelete) return;
+    setDeleting(true);
+    try {
+      await onDelete(docToDelete.source, deletePhysicalFile);
+      setDocToDelete(null);
+    } catch (err) {
+      console.error('Delete failed:', err);
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const filteredDocs = documents.filter((doc) => {
     const term = search.toLowerCase();
@@ -236,14 +254,31 @@ export default function DocumentTable({
                     </td>
 
                     <td style={{ padding: '1rem 1.25rem', textAlign: 'right' }}>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        icon={Eye}
-                        onClick={() => setSelectedDoc(doc)}
-                      >
-                        Inspect Chunks
-                      </Button>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          icon={Eye}
+                          onClick={() => setSelectedDoc(doc)}
+                          title="Inspect chunks"
+                        >
+                          Inspect Chunks
+                        </Button>
+                        {onDelete && (
+                          <Button
+                            variant="danger"
+                            size="sm"
+                            icon={Trash2}
+                            onClick={() => {
+                              setDocToDelete(doc);
+                              setDeletePhysicalFile(false);
+                            }}
+                            title="Delete document and chunks"
+                          >
+                            Delete
+                          </Button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );
@@ -252,6 +287,85 @@ export default function DocumentTable({
           </tbody>
         </table>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={Boolean(docToDelete)}
+        onClose={() => !deleting && setDocToDelete(null)}
+        title="Confirm Document Deletion"
+        maxWidth="500px"
+      >
+        {docToDelete && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
+              <div
+                style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: 'var(--radius-md)',
+                  background: 'var(--error-bg)',
+                  color: 'var(--error)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                <AlertTriangle size={22} />
+              </div>
+              <div>
+                <h4 style={{ color: 'var(--text-primary)', fontSize: '1rem', fontWeight: 600, marginBottom: '0.25rem' }}>
+                  Delete "{docToDelete.source ? docToDelete.source.split(/[/\\]/).pop() : docToDelete.filename}"?
+                </h4>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: 1.5 }}>
+                  This will permanently remove all <strong>{docToDelete.chunk_count ?? docToDelete.chunks?.length ?? 1} chunks</strong> ({docToDelete.total_chars?.toLocaleString() ?? 0} characters) from the ChromaDB vector database.
+                </p>
+              </div>
+            </div>
+
+            <label
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                cursor: 'pointer',
+                fontSize: '0.85rem',
+                color: 'var(--text-secondary)',
+                padding: '0.6rem 0.75rem',
+                borderRadius: 'var(--radius-sm)',
+                background: 'var(--bg-tertiary)',
+                border: '1px solid var(--border-subtle)',
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={deletePhysicalFile}
+                onChange={(e) => setDeletePhysicalFile(e.target.checked)}
+                style={{ cursor: 'pointer' }}
+              />
+              <span>Also delete source file from local <code>docs/</code> folder</span>
+            </label>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.5rem' }}>
+              <Button
+                variant="secondary"
+                onClick={() => setDocToDelete(null)}
+                disabled={deleting}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="danger"
+                icon={Trash2}
+                loading={deleting}
+                onClick={handleConfirmDelete}
+              >
+                Delete Document
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
 
       {/* Upload Modal */}
       <DocumentUploadModal
@@ -265,6 +379,7 @@ export default function DocumentTable({
         isOpen={Boolean(selectedDoc)}
         onClose={() => setSelectedDoc(null)}
         document={selectedDoc}
+        onDelete={onDelete ? (doc) => setDocToDelete(doc) : undefined}
       />
     </div>
   );
