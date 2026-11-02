@@ -48,6 +48,7 @@ async def system_stats(
         active_llm_model=settings.DEFAULT_LLM_MODEL,
         docs_directory=settings.DOCS_DIR,
         persist_directory=settings.CHROMA_PERSIST_DIR,
+        has_groq_key=bool(settings.GROQ_API_KEY),
         has_google_key=bool(settings.GOOGLE_API_KEY),
         has_openai_key=bool(settings.OPENAI_API_KEY),
         has_cohere_key=bool(settings.COHERE_API_KEY),

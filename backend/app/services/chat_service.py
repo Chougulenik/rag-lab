@@ -14,6 +14,31 @@ from ..schemas.retrieval import RetrievalResultItem
 logger = get_logger("chat_service")
 
 
+def extract_text_content(content: Any) -> str:
+    """Safely extracts plain string text from LLM message content (handling str, list of parts, or dict)."""
+    if not content:
+        return ""
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        parts = []
+        for part in content:
+            if isinstance(part, str):
+                parts.append(part)
+            elif isinstance(part, dict):
+                text_val = part.get("text")
+                if text_val and isinstance(text_val, str):
+                    parts.append(text_val)
+            elif hasattr(part, "text") and isinstance(part.text, str):
+                parts.append(part.text)
+        return "".join(parts)
+    if isinstance(content, dict):
+        text_val = content.get("text")
+        if text_val and isinstance(text_val, str):
+            return text_val
+    return str(content)
+
+
 class ChatService:
     """Conversational RAG service with history rewriting, grounded citations, and token streaming."""
 
@@ -23,18 +48,34 @@ class ChatService:
         self.fast_model = settings.FAST_LLM_MODEL
 
     def _get_llm(self, model: str, temperature: float = 0.0, streaming: bool = False):
-        """Instantiate LLM using Google AI Studio (Gemini) or OpenAI."""
+        """Instantiate LLM using Groq, Google AI Studio (Gemini), or OpenAI."""
+        if settings.GROQ_API_KEY:
+            try:
+                from langchain_groq import ChatGroq
+                groq_model = model
+                if any(k in groq_model.lower() for k in ("gemini", "gpt", "llama", "default")):
+                    groq_model = "qwen/qwen3.8-27b"
+                return ChatGroq(
+                    model=groq_model,
+                    temperature=temperature,
+                    groq_api_key=settings.GROQ_API_KEY,
+                    streaming=streaming,
+                )
+            except Exception as e:
+                logger.error(f"Failed to initialize ChatGroq: {e}")
+
         if settings.GOOGLE_API_KEY:
-            from langchain_google_genai import ChatGoogleGenerativeAI
-            gemini_model = model
-            if "gpt" in gemini_model:
-                gemini_model = "gemini-1.5-flash"
-            return ChatGoogleGenerativeAI(
-                model=gemini_model,
-                temperature=temperature,
-                google_api_key=settings.GOOGLE_API_KEY,
-                streaming=streaming,
-            )
+            try:
+                from langchain_google_genai import ChatGoogleGenerativeAI
+                return ChatGoogleGenerativeAI(
+                    model=model,
+                    temperature=temperature,
+                    google_api_key=settings.GOOGLE_API_KEY,
+                    streaming=streaming,
+                )
+            except Exception as e:
+                logger.error(f"Failed to initialize ChatGoogleGenerativeAI: {e}")
+
         elif settings.OPENAI_API_KEY:
             try:
                 from langchain_openai import ChatOpenAI
@@ -83,7 +124,7 @@ class ChatService:
                 HumanMessage(content=f"New question: {user_question}"),
             ]
             response = llm.invoke(prompt_messages)
-            rewritten = response.content.strip()
+            rewritten = extract_text_content(response.content).strip()
             logger.info(f"Rewrote query '{user_question}' -> '{rewritten}'")
             return rewritten
         except Exception as e:
@@ -143,9 +184,9 @@ class ChatService:
         llm = self._get_llm(self.default_model, temperature=temperature)
         if llm is None:
             answer = (
-                "⚠️ GOOGLE_API_KEY is not configured on the server.\n\n"
+                "⚠️ Neither GROQ_API_KEY nor GOOGLE_API_KEY is configured on the server.\n\n"
                 f"Retrieved {len(citations)} chunks from knowledge base for query: '{search_query}'.\n"
-                "Please configure GOOGLE_API_KEY in your .env file to enable live Gemini LLM generation."
+                "Please configure GROQ_API_KEY in your .env file to enable live LLM generation."
             )
             return ChatResponse(answer=answer, citations=citations, rewritten_query=search_query)
 
@@ -162,7 +203,7 @@ class ChatService:
                 HumanMessage(content=prompt),
             ]
             res = await llm.ainvoke(messages)
-            answer = res.content
+            answer = extract_text_content(res.content)
             return ChatResponse(
                 answer=answer,
                 citations=citations,
@@ -193,10 +234,10 @@ class ChatService:
         llm = self._get_llm(self.default_model, temperature=temperature, streaming=True)
         if llm is None:
             mock_text = (
-                "⚠️ Note: `GOOGLE_API_KEY` is not set in environment.\n\n"
+                "⚠️ Note: Neither `GROQ_API_KEY` nor `GOOGLE_API_KEY` is set in environment.\n\n"
                 f"Successfully retrieved **{len(citations)} sources** from knowledge base for query:\n"
                 f"> *\"{search_query}\"*\n\n"
-                "Please set your `GOOGLE_API_KEY` in `.env` to enable live Gemini streaming."
+                "Please set your `GROQ_API_KEY` in `.env` to enable live Groq streaming."
             )
             for token in mock_text.split(" "):
                 yield f"data: {json.dumps({'type': 'token', 'content': token + ' '})}\n\n"
@@ -219,7 +260,7 @@ class ChatService:
             ]
 
             async for chunk in llm.astream(messages):
-                token = chunk.content
+                token = extract_text_content(chunk.content)
                 if token:
                     yield f"data: {json.dumps({'type': 'token', 'content': token})}\n\n"
 

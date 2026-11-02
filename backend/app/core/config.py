@@ -55,13 +55,14 @@ try:
                 return v
             return ["*"]
 
-        # LLM & Embedding Settings (Google AI Studio / Gemini)
+        # LLM & Embedding Settings (Groq / Gemini / OpenAI)
+        GROQ_API_KEY: Optional[str] = os.getenv("GROQ_API_KEY", "")
         GOOGLE_API_KEY: Optional[str] = os.getenv("GOOGLE_API_KEY", os.getenv("GEMINI_API_KEY", ""))
         OPENAI_API_KEY: Optional[str] = os.getenv("OPENAI_API_KEY", "")
         COHERE_API_KEY: Optional[str] = os.getenv("COHERE_API_KEY", "")
         EMBEDDING_MODEL: str = os.getenv("EMBEDDING_MODEL", "models/gemini-embedding-001")
-        DEFAULT_LLM_MODEL: str = os.getenv("DEFAULT_LLM_MODEL", "gemini-1.5-flash")
-        FAST_LLM_MODEL: str = os.getenv("FAST_LLM_MODEL", "gemini-1.5-flash")
+        DEFAULT_LLM_MODEL: str = os.getenv("DEFAULT_LLM_MODEL", "qwen/qwen3.8-27b")
+        FAST_LLM_MODEL: str = os.getenv("FAST_LLM_MODEL", "qwen/qwen3.8-27b")
         DEFAULT_TEMPERATURE: float = 0.2
         DEFAULT_K: int = 4
 
@@ -85,12 +86,13 @@ except ImportError:
         DEBUG: bool = False
         API_V1_PREFIX: str = "/api/v1"
         CORS_ORIGINS: List[str] = ["*"]
+        GROQ_API_KEY: Optional[str] = os.getenv("GROQ_API_KEY", "")
         GOOGLE_API_KEY: Optional[str] = os.getenv("GOOGLE_API_KEY", os.getenv("GEMINI_API_KEY", ""))
         OPENAI_API_KEY: Optional[str] = os.getenv("OPENAI_API_KEY", "")
         COHERE_API_KEY: Optional[str] = os.getenv("COHERE_API_KEY", "")
         EMBEDDING_MODEL: str = os.getenv("EMBEDDING_MODEL", "models/gemini-embedding-001")
-        DEFAULT_LLM_MODEL: str = os.getenv("DEFAULT_LLM_MODEL", "gemini-1.5-flash")
-        FAST_LLM_MODEL: str = os.getenv("FAST_LLM_MODEL", "gemini-1.5-flash")
+        DEFAULT_LLM_MODEL: str = os.getenv("DEFAULT_LLM_MODEL", "qwen/qwen3.8-27b")
+        FAST_LLM_MODEL: str = os.getenv("FAST_LLM_MODEL", "qwen/qwen3.8-27b")
         DEFAULT_TEMPERATURE: float = 0.2
         DEFAULT_K: int = 4
         CHROMA_PERSIST_DIR: str = os.getenv(

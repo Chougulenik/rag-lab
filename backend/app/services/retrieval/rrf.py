@@ -29,16 +29,33 @@ class RRFRetriever(BaseRetriever):
         self.model_name = model_name or settings.FAST_LLM_MODEL
 
     def _get_llm(self):
+        if settings.GROQ_API_KEY:
+            try:
+                from langchain_groq import ChatGroq
+                m = self.model_name
+                if any(k in m.lower() for k in ("gemini", "gpt", "llama", "default")):
+                    m = "qwen/qwen3.8-27b"
+                return ChatGroq(
+                    model=m,
+                    temperature=0.0,
+                    groq_api_key=settings.GROQ_API_KEY,
+                )
+            except Exception as e:
+                logger.error(f"Failed to load ChatGroq in rrf: {e}")
+
         if settings.GOOGLE_API_KEY:
-            from langchain_google_genai import ChatGoogleGenerativeAI
-            m = self.model_name
-            if "gpt" in m:
-                m = "gemini-1.5-flash"
-            return ChatGoogleGenerativeAI(
-                model=m,
-                temperature=0.0,
-                google_api_key=settings.GOOGLE_API_KEY,
-            )
+            try:
+                from langchain_google_genai import ChatGoogleGenerativeAI
+                m = self.model_name
+                if "gpt" in m or "gemini-1.5" in m or "gemini-2.0" in m:
+                    m = "gemini-3.8-flash"
+                return ChatGoogleGenerativeAI(
+                    model=m,
+                    temperature=0.0,
+                    google_api_key=settings.GOOGLE_API_KEY,
+                )
+            except Exception as e:
+                logger.error(f"Failed to load ChatGoogleGenerativeAI in rrf: {e}")
         elif settings.OPENAI_API_KEY:
             try:
                 from langchain_openai import ChatOpenAI

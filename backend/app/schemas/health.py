@@ -23,6 +23,7 @@ class SystemStatsResponse(BaseModel):
     active_llm_model: str = Field(default="gpt-4o")
     docs_directory: str = Field(default="docs")
     persist_directory: str = Field(default="db/chroma_db")
+    has_groq_key: bool = Field(default=False)
     has_google_key: bool = Field(default=False)
     has_openai_key: bool = Field(default=False)
     has_cohere_key: bool = Field(default=False)
