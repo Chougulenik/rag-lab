@@ -1,0 +1,3 @@
+Sample Guide
+Welcome to the RAG for Beginners guide.
+This document explains Retrieval-Augmented Generation concepts.
